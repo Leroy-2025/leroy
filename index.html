@@ -3,97 +3,199 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>清图工坊</title>
+    <title>公司财务管理系统</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <main class="app-shell">
+    <div class="app-shell">
       <aside class="sidebar">
         <div class="brand">
-          <div class="brand-mark">清</div>
+          <div class="brand-mark">财</div>
           <div>
-            <h1>清图工坊</h1>
-            <p>本地图片增强</p>
+            <h1>财务管理系统</h1>
+            <p>收支登记与项目总览</p>
           </div>
         </div>
 
-        <label class="upload-zone" id="dropZone">
-          <input id="fileInput" type="file" accept="image/*" />
-          <span class="upload-icon">+</span>
-          <strong>选择图片</strong>
-          <small>JPG / PNG / WebP</small>
-        </label>
+        <nav class="nav-tabs" aria-label="页面切换">
+          <button class="nav-tab active" data-view="dashboard">数据大屏</button>
+          <button class="nav-tab" data-view="records">收支明细</button>
+          <button class="nav-tab" data-view="admin">后台录入</button>
+        </nav>
 
-        <section class="panel">
-          <div class="panel-title">一键处理</div>
-          <div class="button-grid">
-            <button id="autoBtn" class="primary">变清晰</button>
-            <button id="softBtn">柔和修复</button>
-            <button id="resetBtn">重置</button>
-            <button id="downloadBtn">导出</button>
-          </div>
+        <section class="side-panel">
+          <div class="side-title">当前月份</div>
+          <input id="monthFilter" type="month" />
+          <button id="clearFilterBtn" class="ghost-btn">查看全部数据</button>
         </section>
 
-        <section class="panel">
-          <div class="panel-title">精修</div>
-          <label class="control">
-            <span>清晰度</span>
-            <input id="sharpness" type="range" min="0" max="100" value="45" />
-          </label>
-          <label class="control">
-            <span>降噪</span>
-            <input id="denoise" type="range" min="0" max="100" value="12" />
-          </label>
-          <label class="control">
-            <span>对比度</span>
-            <input id="contrast" type="range" min="-50" max="70" value="14" />
-          </label>
-          <label class="control">
-            <span>亮度</span>
-            <input id="brightness" type="range" min="-40" max="40" value="2" />
-          </label>
-          <label class="control">
-            <span>饱和度</span>
-            <input id="saturation" type="range" min="-45" max="55" value="8" />
-          </label>
-        </section>
-
-        <section class="panel">
-          <div class="panel-title">区域修复</div>
-          <div class="tool-row">
-            <button id="repairModeBtn" aria-pressed="false">画笔</button>
-            <label class="brush-size">
-              <span>大小</span>
-              <input id="brushSize" type="range" min="12" max="100" value="42" />
-            </label>
-          </div>
-          <button id="applyRepairBtn" class="wide">应用修复</button>
-          <button id="clearMaskBtn" class="wide ghost">清除选区</button>
+        <section class="side-panel">
+          <div class="side-title">数据操作</div>
+          <button id="seedBtn">载入示例数据</button>
+          <button id="exportBtn">导出 CSV</button>
+          <button id="clearAllBtn" class="danger-btn">清空本地数据</button>
         </section>
       </aside>
 
-      <section class="workspace">
+      <main class="main-content">
         <header class="topbar">
-          <div class="status" id="status">等待图片</div>
-          <div class="compare">
-            <span>原图</span>
-            <input id="compareSlider" type="range" min="0" max="100" value="100" />
-            <span>处理后</span>
+          <div>
+            <p class="eyebrow">Finance Console</p>
+            <h2 id="pageTitle">数据大屏</h2>
+          </div>
+          <div class="top-actions">
+            <span id="recordCount">0 条记录</span>
+            <button id="quickAddBtn" class="primary-btn">新增收支</button>
           </div>
         </header>
 
-        <div class="stage" id="stage">
-          <div class="empty-state" id="emptyState">
-            <strong>把图片拖到这里</strong>
-            <span>处理过程只在当前浏览器中完成</span>
+        <section class="view active" id="dashboardView">
+          <div class="metrics-grid">
+            <article class="metric income">
+              <span>总收入</span>
+              <strong id="totalIncome">¥0.00</strong>
+              <small id="incomeHint">本期收入</small>
+            </article>
+            <article class="metric expense">
+              <span>总支出</span>
+              <strong id="totalExpense">¥0.00</strong>
+              <small id="expenseHint">本期支出</small>
+            </article>
+            <article class="metric balance">
+              <span>结余</span>
+              <strong id="netBalance">¥0.00</strong>
+              <small id="balanceHint">收入减支出</small>
+            </article>
+            <article class="metric project">
+              <span>项目数</span>
+              <strong id="projectCount">0</strong>
+              <small>已登记项目</small>
+            </article>
           </div>
-          <canvas id="originalCanvas"></canvas>
-          <canvas id="outputCanvas"></canvas>
-          <canvas id="maskCanvas"></canvas>
-          <div id="brushPreview"></div>
-        </div>
-      </section>
-    </main>
+
+          <div class="dashboard-grid">
+            <section class="data-section wide">
+              <div class="section-heading">
+                <div>
+                  <h3>月度收支趋势</h3>
+                  <p>按月份汇总收入与支出</p>
+                </div>
+              </div>
+              <canvas id="monthlyChart" width="960" height="340"></canvas>
+            </section>
+
+            <section class="data-section">
+              <div class="section-heading">
+                <div>
+                  <h3>收支结构</h3>
+                  <p>收入与支出占比</p>
+                </div>
+              </div>
+              <canvas id="typeChart" width="360" height="280"></canvas>
+            </section>
+
+            <section class="data-section">
+              <div class="section-heading">
+                <div>
+                  <h3>项目总体情况</h3>
+                  <p>项目收入、支出与结余</p>
+                </div>
+              </div>
+              <div class="project-list" id="projectList"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="recordsView">
+          <section class="data-section">
+            <div class="section-heading">
+              <div>
+                <h3>收入和支出明细</h3>
+                <p>支持按月份、类型、项目快速筛选</p>
+              </div>
+              <div class="filters">
+                <select id="typeFilter">
+                  <option value="all">全部类型</option>
+                  <option value="income">收入</option>
+                  <option value="expense">支出</option>
+                </select>
+                <input id="projectFilter" type="search" placeholder="搜索项目" />
+              </div>
+            </div>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>日期</th>
+                    <th>类型</th>
+                    <th>项目</th>
+                    <th>分类</th>
+                    <th>摘要</th>
+                    <th class="number">金额</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="recordsTable"></tbody>
+              </table>
+            </div>
+            <div class="empty-table" id="emptyTable">暂无记录，请到后台录入数据。</div>
+          </section>
+        </section>
+
+        <section class="view" id="adminView">
+          <section class="form-section">
+            <div class="section-heading">
+              <div>
+                <h3 id="formTitle">新增收支数据</h3>
+                <p>录入后自动更新数据大屏和明细表</p>
+              </div>
+            </div>
+
+            <form id="financeForm">
+              <input id="recordId" type="hidden" />
+              <div class="form-grid">
+                <label>
+                  <span>收支类型</span>
+                  <select id="recordType" required>
+                    <option value="income">收入</option>
+                    <option value="expense">支出</option>
+                  </select>
+                </label>
+                <label>
+                  <span>发生日期</span>
+                  <input id="recordDate" type="date" required />
+                </label>
+                <label>
+                  <span>项目名称</span>
+                  <input id="recordProject" type="text" placeholder="例如：华东实施项目" required />
+                </label>
+                <label>
+                  <span>分类</span>
+                  <input id="recordCategory" type="text" placeholder="例如：合同款 / 人力成本" required />
+                </label>
+                <label>
+                  <span>金额</span>
+                  <input id="recordAmount" type="number" min="0.01" step="0.01" placeholder="0.00" required />
+                </label>
+                <label>
+                  <span>经办人</span>
+                  <input id="recordOwner" type="text" placeholder="姓名" />
+                </label>
+              </div>
+              <label class="full-field">
+                <span>摘要备注</span>
+                <textarea id="recordNote" rows="4" placeholder="填写合同、发票、付款说明等信息"></textarea>
+              </label>
+              <div class="form-actions">
+                <button type="submit" class="primary-btn">保存数据</button>
+                <button type="button" id="cancelEditBtn" class="ghost-btn">取消编辑</button>
+              </div>
+            </form>
+          </section>
+        </section>
+      </main>
+    </div>
 
     <script src="./app.js"></script>
   </body>
