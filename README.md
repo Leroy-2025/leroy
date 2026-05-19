@@ -1,6 +1,6 @@
 # 公司财务管理系统
 
-一个纯前端公司财务管理网站，支持收支明细登记、数据大屏、项目总体情况、总收入、总支出、结余统计，以及按月份查看收入和支出。
+一个公司财务管理网站，包含 Google / Material 风格的数据大屏、收支明细、后台录入和服务器端数据保存。
 
 ## 功能
 
@@ -9,16 +9,26 @@
 - 项目情况：按项目汇总收入、支出和结余
 - 后台录入：新增和编辑收入、支出明细
 - 明细管理：筛选、编辑、删除、导出 CSV
-- 本地存储：数据保存在当前浏览器 `localStorage`
+- 服务器保存：数据写入 `data/records.json`，远程访问同一服务器即可查看同一份数据
 
-## 使用
+## 本地运行
 
-直接打开 `index.html` 即可使用。首次打开可以点击“载入示例数据”查看效果。
+```bash
+npm start
+```
 
-## GitHub Pages
+打开：
 
-这是静态网站，可以通过 GitHub Pages 部署。推荐设置：
+```text
+http://localhost:3000
+```
 
-- Source: Deploy from a branch
-- Branch: `gh-pages`
-- Folder: `/root`
+## 部署说明
+
+这个版本需要 Node.js 服务器，不能只用 GitHub Pages 保存数据。可以部署到 Render、Railway、VPS、宝塔面板或其他支持 Node.js 的平台。
+
+部署时建议：
+
+- Start command: `npm start`
+- Node version: 18 或更高
+- 如果平台支持持久磁盘，把 `DATA_DIR` 指向持久目录，避免重启后数据丢失

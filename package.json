@@ -1,0 +1,14 @@
+{
+  "name": "company-finance-console",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Company finance management dashboard with server-side record storage.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "check": "node --check server.js && node --check app.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

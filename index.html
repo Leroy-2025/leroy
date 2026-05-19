@@ -10,63 +10,82 @@
     <div class="app-shell">
       <aside class="sidebar">
         <div class="brand">
-          <div class="brand-mark">财</div>
+          <div class="brand-mark">F</div>
           <div>
-            <h1>财务管理系统</h1>
-            <p>收支登记与项目总览</p>
+            <h1>Finance Console</h1>
+            <p>公司财务管理</p>
           </div>
         </div>
 
         <nav class="nav-tabs" aria-label="页面切换">
-          <button class="nav-tab active" data-view="dashboard">数据大屏</button>
-          <button class="nav-tab" data-view="records">收支明细</button>
-          <button class="nav-tab" data-view="admin">后台录入</button>
+          <button class="nav-tab active" data-view="dashboard">
+            <span class="material-dot blue"></span>
+            数据大屏
+          </button>
+          <button class="nav-tab" data-view="records">
+            <span class="material-dot green"></span>
+            收支明细
+          </button>
+          <button class="nav-tab" data-view="admin">
+            <span class="material-dot yellow"></span>
+            后台录入
+          </button>
         </nav>
 
-        <section class="side-panel">
-          <div class="side-title">当前月份</div>
+        <section class="side-card">
+          <div class="side-title">月份筛选</div>
           <input id="monthFilter" type="month" />
-          <button id="clearFilterBtn" class="ghost-btn">查看全部数据</button>
+          <button id="clearFilterBtn" class="text-btn">查看全部数据</button>
         </section>
 
-        <section class="side-panel">
+        <section class="side-card">
+          <div class="side-title">服务器状态</div>
+          <div class="server-status" id="serverStatus">
+            <span class="status-dot"></span>
+            <strong>连接中</strong>
+          </div>
+          <small>数据保存到服务器，远程访问同一网址即可查看。</small>
+        </section>
+
+        <section class="side-card">
           <div class="side-title">数据操作</div>
           <button id="seedBtn">载入示例数据</button>
           <button id="exportBtn">导出 CSV</button>
-          <button id="clearAllBtn" class="danger-btn">清空本地数据</button>
+          <button id="clearAllBtn" class="danger-btn">清空服务器数据</button>
         </section>
       </aside>
 
       <main class="main-content">
         <header class="topbar">
           <div>
-            <p class="eyebrow">Finance Console</p>
+            <p class="eyebrow">Workspace</p>
             <h2 id="pageTitle">数据大屏</h2>
           </div>
           <div class="top-actions">
             <span id="recordCount">0 条记录</span>
+            <button id="refreshBtn">刷新</button>
             <button id="quickAddBtn" class="primary-btn">新增收支</button>
           </div>
         </header>
 
         <section class="view active" id="dashboardView">
           <div class="metrics-grid">
-            <article class="metric income">
+            <article class="metric">
               <span>总收入</span>
               <strong id="totalIncome">¥0.00</strong>
               <small id="incomeHint">本期收入</small>
             </article>
-            <article class="metric expense">
+            <article class="metric">
               <span>总支出</span>
               <strong id="totalExpense">¥0.00</strong>
               <small id="expenseHint">本期支出</small>
             </article>
-            <article class="metric balance">
+            <article class="metric">
               <span>结余</span>
               <strong id="netBalance">¥0.00</strong>
               <small id="balanceHint">收入减支出</small>
             </article>
-            <article class="metric project">
+            <article class="metric">
               <span>项目数</span>
               <strong id="projectCount">0</strong>
               <small>已登记项目</small>
@@ -81,7 +100,7 @@
                   <p>按月份汇总收入与支出</p>
                 </div>
               </div>
-              <canvas id="monthlyChart" width="960" height="340"></canvas>
+              <canvas id="monthlyChart" width="1000" height="340"></canvas>
             </section>
 
             <section class="data-section">
@@ -91,7 +110,7 @@
                   <p>收入与支出占比</p>
                 </div>
               </div>
-              <canvas id="typeChart" width="360" height="280"></canvas>
+              <canvas id="typeChart" width="380" height="300"></canvas>
             </section>
 
             <section class="data-section">
@@ -148,7 +167,7 @@
             <div class="section-heading">
               <div>
                 <h3 id="formTitle">新增收支数据</h3>
-                <p>录入后自动更新数据大屏和明细表</p>
+                <p>数据会保存到服务器，远程设备刷新后可查看</p>
               </div>
             </div>
 
@@ -188,8 +207,8 @@
                 <textarea id="recordNote" rows="4" placeholder="填写合同、发票、付款说明等信息"></textarea>
               </label>
               <div class="form-actions">
-                <button type="submit" class="primary-btn">保存数据</button>
-                <button type="button" id="cancelEditBtn" class="ghost-btn">取消编辑</button>
+                <button type="submit" class="primary-btn">保存到服务器</button>
+                <button type="button" id="cancelEditBtn" class="text-btn">取消编辑</button>
               </div>
             </form>
           </section>
@@ -197,6 +216,7 @@
       </main>
     </div>
 
+    <div class="toast" id="toast"></div>
     <script src="./app.js"></script>
   </body>
 </html>

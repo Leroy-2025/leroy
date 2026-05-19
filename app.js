@@ -1,4 +1,4 @@
-const STORAGE_KEY = "company-finance-records-v1";
+const API_BASE = location.protocol === "file:" ? "http://127.0.0.1:3000" : "";
 
 const els = {
   navTabs: document.querySelectorAll(".nav-tab"),
@@ -37,9 +37,12 @@ const els = {
   recordNote: document.querySelector("#recordNote"),
   cancelEditBtn: document.querySelector("#cancelEditBtn"),
   quickAddBtn: document.querySelector("#quickAddBtn"),
+  refreshBtn: document.querySelector("#refreshBtn"),
   seedBtn: document.querySelector("#seedBtn"),
   exportBtn: document.querySelector("#exportBtn"),
   clearAllBtn: document.querySelector("#clearAllBtn"),
+  serverStatus: document.querySelector("#serverStatus"),
+  toast: document.querySelector("#toast"),
 };
 
 const pageTitles = {
@@ -48,18 +51,45 @@ const pageTitles = {
   admin: "后台录入",
 };
 
-let records = loadRecords();
+let records = [];
 
-function loadRecords() {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-  } catch {
-    return [];
-  }
+function apiUrl(path) {
+  return `${API_BASE}${path}`;
 }
 
-function saveRecords() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+async function api(path, options = {}) {
+  const response = await fetch(apiUrl(path), {
+    headers: { "Content-Type": "application/json", ...(options.headers || {}) },
+    ...options,
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error || "服务器请求失败。");
+  return data;
+}
+
+function setServerStatus(online, text) {
+  els.serverStatus.classList.toggle("online", online);
+  els.serverStatus.classList.toggle("offline", !online);
+  els.serverStatus.querySelector("strong").textContent = text;
+}
+
+function showToast(message) {
+  els.toast.textContent = message;
+  els.toast.classList.add("show");
+  setTimeout(() => els.toast.classList.remove("show"), 2600);
+}
+
+async function loadRecords() {
+  try {
+    const data = await api("/api/records");
+    records = data.records || [];
+    setServerStatus(true, "已连接");
+    render();
+  } catch (error) {
+    setServerStatus(false, "未连接");
+    showToast(`无法连接服务器：${error.message}`);
+    render();
+  }
 }
 
 function money(value) {
@@ -159,10 +189,10 @@ function renderMonthlyChart(list) {
   const chartWidth = chartRight - chartLeft;
   const chartHeight = chartBottom - chartTop;
 
-  ctx.strokeStyle = "#d8e0dc";
+  ctx.strokeStyle = "#dadce0";
   ctx.lineWidth = 1;
-  ctx.fillStyle = "#697771";
-  ctx.font = "13px Microsoft YaHei, sans-serif";
+  ctx.fillStyle = "#5f6368";
+  ctx.font = "13px Microsoft YaHei, Arial, sans-serif";
 
   for (let i = 0; i <= 4; i += 1) {
     const y = chartBottom - (chartHeight * i) / 4;
@@ -187,18 +217,32 @@ function renderMonthlyChart(list) {
     const incomeHeight = (item.income / maxValue) * chartHeight;
     const expenseHeight = (item.expense / maxValue) * chartHeight;
 
-    ctx.fillStyle = "#167356";
-    ctx.fillRect(x - barWidth - 2, chartBottom - incomeHeight, barWidth, incomeHeight);
-    ctx.fillStyle = "#b5483f";
-    ctx.fillRect(x + 2, chartBottom - expenseHeight, barWidth, expenseHeight);
-    ctx.fillStyle = "#697771";
+    ctx.fillStyle = "#1a73e8";
+    roundedBar(ctx, x - barWidth - 3, chartBottom - incomeHeight, barWidth, incomeHeight, 5);
+    ctx.fillStyle = "#d93025";
+    roundedBar(ctx, x + 3, chartBottom - expenseHeight, barWidth, expenseHeight, 5);
+    ctx.fillStyle = "#5f6368";
     ctx.textAlign = "center";
     ctx.fillText(month.slice(5), x, chartBottom + 24);
   });
 
   ctx.textAlign = "left";
-  drawLegend(ctx, chartLeft, 16, "#167356", "收入");
-  drawLegend(ctx, chartLeft + 72, 16, "#b5483f", "支出");
+  drawLegend(ctx, chartLeft, 16, "#1a73e8", "收入");
+  drawLegend(ctx, chartLeft + 72, 16, "#d93025", "支出");
+}
+
+function roundedBar(ctx, x, y, width, height, radius) {
+  if (height <= 0) return;
+  const r = Math.min(radius, width / 2, height / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + width - r, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + r);
+  ctx.lineTo(x + width, y + height);
+  ctx.lineTo(x, y + height);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.fill();
 }
 
 function renderTypeChart(income, expense) {
@@ -216,50 +260,50 @@ function renderTypeChart(income, expense) {
 
   const centerX = width / 2;
   const centerY = height / 2 - 8;
-  const radius = 86;
+  const radius = 88;
   const incomeAngle = (income / total) * Math.PI * 2;
 
   ctx.lineWidth = 34;
   ctx.lineCap = "round";
-  ctx.strokeStyle = "#e8eeee";
+  ctx.strokeStyle = "#edf2f7";
   ctx.beginPath();
   ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
   ctx.stroke();
 
-  ctx.strokeStyle = "#167356";
+  ctx.strokeStyle = "#1a73e8";
   ctx.beginPath();
   ctx.arc(centerX, centerY, radius, -Math.PI / 2, -Math.PI / 2 + incomeAngle);
   ctx.stroke();
 
-  ctx.strokeStyle = "#b5483f";
+  ctx.strokeStyle = "#d93025";
   ctx.beginPath();
   ctx.arc(centerX, centerY, radius, -Math.PI / 2 + incomeAngle, Math.PI * 1.5);
   ctx.stroke();
 
-  ctx.fillStyle = "#17211d";
-  ctx.font = "700 24px Microsoft YaHei, sans-serif";
+  ctx.fillStyle = "#202124";
+  ctx.font = "700 24px Microsoft YaHei, Arial, sans-serif";
   ctx.textAlign = "center";
   ctx.fillText(Math.round(((income - expense) / total) * 100) + "%", centerX, centerY + 5);
-  ctx.fillStyle = "#697771";
-  ctx.font = "13px Microsoft YaHei, sans-serif";
+  ctx.fillStyle = "#5f6368";
+  ctx.font = "13px Microsoft YaHei, Arial, sans-serif";
   ctx.fillText("结余率", centerX, centerY + 30);
 
   ctx.textAlign = "left";
-  drawLegend(ctx, 58, height - 26, "#167356", `收入 ${money(income)}`);
-  drawLegend(ctx, 198, height - 26, "#b5483f", `支出 ${money(expense)}`);
+  drawLegend(ctx, 48, height - 24, "#1a73e8", `收入 ${money(income)}`);
+  drawLegend(ctx, 198, height - 24, "#d93025", `支出 ${money(expense)}`);
 }
 
 function drawLegend(ctx, x, y, color, text) {
   ctx.fillStyle = color;
   ctx.fillRect(x, y - 10, 12, 12);
-  ctx.fillStyle = "#697771";
-  ctx.font = "13px Microsoft YaHei, sans-serif";
+  ctx.fillStyle = "#5f6368";
+  ctx.font = "13px Microsoft YaHei, Arial, sans-serif";
   ctx.fillText(text, x + 18, y);
 }
 
 function drawEmptyCanvas(ctx, width, height, text) {
-  ctx.fillStyle = "#697771";
-  ctx.font = "15px Microsoft YaHei, sans-serif";
+  ctx.fillStyle = "#5f6368";
+  ctx.font = "15px Microsoft YaHei, Arial, sans-serif";
   ctx.textAlign = "center";
   ctx.fillText(text, width / 2, height / 2);
   ctx.textAlign = "left";
@@ -302,7 +346,7 @@ function renderProjects(list) {
 
 function renderTable(list) {
   els.emptyTable.style.display = list.length ? "none" : "block";
-  els.recordsTable.innerHTML = list
+  els.recordsTable.innerHTML = [...list]
     .sort((a, b) => b.date.localeCompare(a.date))
     .map(
       (record) => `
@@ -346,6 +390,18 @@ function resetForm() {
   els.recordNote.value = "";
 }
 
+function formRecord() {
+  return {
+    type: els.recordType.value,
+    date: els.recordDate.value,
+    project: els.recordProject.value.trim(),
+    category: els.recordCategory.value.trim(),
+    amount: Number(els.recordAmount.value),
+    owner: els.recordOwner.value.trim(),
+    note: els.recordNote.value.trim(),
+  };
+}
+
 function editRecord(id) {
   const record = records.find((item) => item.id === id);
   if (!record) return;
@@ -361,43 +417,21 @@ function editRecord(id) {
   els.recordNote.value = record.note || "";
 }
 
-function deleteRecord(id) {
+async function deleteRecord(id) {
   const record = records.find((item) => item.id === id);
   if (!record) return;
   if (!confirm(`确定删除「${record.project}」的这条${record.type === "income" ? "收入" : "支出"}记录吗？`)) {
     return;
   }
-  records = records.filter((item) => item.id !== id);
-  saveRecords();
-  render();
+  await api(`/api/records/${encodeURIComponent(id)}`, { method: "DELETE" });
+  showToast("已从服务器删除。");
+  await loadRecords();
 }
 
-function seedRecords() {
-  const demo = [
-    ["income", "2026-01-12", "华东实施项目", "合同款", 186000, "张敏", "一期回款"],
-    ["expense", "2026-01-20", "华东实施项目", "人力成本", 52000, "李雷", "实施团队费用"],
-    ["income", "2026-02-08", "云平台订阅", "订阅收入", 96000, "王宁", "年度订阅"],
-    ["expense", "2026-02-15", "云平台订阅", "服务器", 18000, "赵洁", "云资源费用"],
-    ["income", "2026-03-05", "西南运维项目", "服务费", 72000, "陈航", "季度服务费"],
-    ["expense", "2026-03-21", "西南运维项目", "差旅", 12600, "陈航", "客户现场支持"],
-    ["income", "2026-04-10", "华东实施项目", "验收款", 128000, "张敏", "验收回款"],
-    ["expense", "2026-04-18", "总部运营", "办公费用", 24800, "行政部", "办公采购"],
-    ["income", "2026-05-06", "数据治理项目", "合同款", 214000, "周扬", "首付款"],
-    ["expense", "2026-05-14", "数据治理项目", "外包服务", 66000, "周扬", "数据清洗服务"],
-  ].map(([type, date, project, category, amount, owner, note]) => ({
-    id: crypto.randomUUID(),
-    type,
-    date,
-    project,
-    category,
-    amount,
-    owner,
-    note,
-  }));
-
-  records = [...demo, ...records];
-  saveRecords();
-  render();
+async function seedRecords() {
+  await api("/api/records/seed", { method: "POST" });
+  showToast("示例数据已保存到服务器。");
+  await loadRecords();
 }
 
 function exportCsv() {
@@ -431,6 +465,8 @@ els.quickAddBtn.addEventListener("click", () => {
   switchView("admin");
 });
 
+els.refreshBtn.addEventListener("click", loadRecords);
+
 els.clearFilterBtn.addEventListener("click", () => {
   els.monthFilter.value = "";
   render();
@@ -440,29 +476,21 @@ els.monthFilter.addEventListener("input", render);
 els.typeFilter.addEventListener("change", render);
 els.projectFilter.addEventListener("input", render);
 
-els.financeForm.addEventListener("submit", (event) => {
+els.financeForm.addEventListener("submit", async (event) => {
   event.preventDefault();
-  const record = {
-    id: els.recordId.value || crypto.randomUUID(),
-    type: els.recordType.value,
-    date: els.recordDate.value,
-    project: els.recordProject.value.trim(),
-    category: els.recordCategory.value.trim(),
-    amount: Number(els.recordAmount.value),
-    owner: els.recordOwner.value.trim(),
-    note: els.recordNote.value.trim(),
-  };
+  const id = els.recordId.value;
+  const method = id ? "PUT" : "POST";
+  const path = id ? `/api/records/${encodeURIComponent(id)}` : "/api/records";
 
-  if (els.recordId.value) {
-    records = records.map((item) => (item.id === record.id ? record : item));
-  } else {
-    records.push(record);
+  try {
+    await api(path, { method, body: JSON.stringify(formRecord()) });
+    showToast("数据已保存到服务器。");
+    resetForm();
+    switchView("dashboard");
+    await loadRecords();
+  } catch (error) {
+    showToast(error.message);
   }
-
-  saveRecords();
-  resetForm();
-  switchView("dashboard");
-  render();
 });
 
 els.cancelEditBtn.addEventListener("click", resetForm);
@@ -472,19 +500,18 @@ els.recordsTable.addEventListener("click", (event) => {
   if (!button) return;
   const id = button.dataset.id;
   if (button.dataset.action === "edit") editRecord(id);
-  if (button.dataset.action === "delete") deleteRecord(id);
+  if (button.dataset.action === "delete") deleteRecord(id).catch((error) => showToast(error.message));
 });
 
-els.seedBtn.addEventListener("click", seedRecords);
+els.seedBtn.addEventListener("click", () => seedRecords().catch((error) => showToast(error.message)));
 els.exportBtn.addEventListener("click", exportCsv);
-els.clearAllBtn.addEventListener("click", () => {
-  if (!confirm("确定清空所有本地财务数据吗？")) return;
-  records = [];
-  saveRecords();
-  resetForm();
-  render();
+els.clearAllBtn.addEventListener("click", async () => {
+  if (!confirm("确定清空服务器上的所有财务数据吗？")) return;
+  await api("/api/records", { method: "DELETE" });
+  showToast("服务器数据已清空。");
+  await loadRecords();
 });
 
 els.monthFilter.value = currentMonth();
 resetForm();
-render();
+loadRecords();
