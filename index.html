@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>清图工坊</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">清</div>
+          <div>
+            <h1>清图工坊</h1>
+            <p>本地图片增强</p>
+          </div>
+        </div>
+
+        <label class="upload-zone" id="dropZone">
+          <input id="fileInput" type="file" accept="image/*" />
+          <span class="upload-icon">+</span>
+          <strong>选择图片</strong>
+          <small>JPG / PNG / WebP</small>
+        </label>
+
+        <section class="panel">
+          <div class="panel-title">一键处理</div>
+          <div class="button-grid">
+            <button id="autoBtn" class="primary">变清晰</button>
+            <button id="softBtn">柔和修复</button>
+            <button id="resetBtn">重置</button>
+            <button id="downloadBtn">导出</button>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-title">精修</div>
+          <label class="control">
+            <span>清晰度</span>
+            <input id="sharpness" type="range" min="0" max="100" value="45" />
+          </label>
+          <label class="control">
+            <span>降噪</span>
+            <input id="denoise" type="range" min="0" max="100" value="12" />
+          </label>
+          <label class="control">
+            <span>对比度</span>
+            <input id="contrast" type="range" min="-50" max="70" value="14" />
+          </label>
+          <label class="control">
+            <span>亮度</span>
+            <input id="brightness" type="range" min="-40" max="40" value="2" />
+          </label>
+          <label class="control">
+            <span>饱和度</span>
+            <input id="saturation" type="range" min="-45" max="55" value="8" />
+          </label>
+        </section>
+
+        <section class="panel">
+          <div class="panel-title">区域修复</div>
+          <div class="tool-row">
+            <button id="repairModeBtn" aria-pressed="false">画笔</button>
+            <label class="brush-size">
+              <span>大小</span>
+              <input id="brushSize" type="range" min="12" max="100" value="42" />
+            </label>
+          </div>
+          <button id="applyRepairBtn" class="wide">应用修复</button>
+          <button id="clearMaskBtn" class="wide ghost">清除选区</button>
+        </section>
+      </aside>
+
+      <section class="workspace">
+        <header class="topbar">
+          <div class="status" id="status">等待图片</div>
+          <div class="compare">
+            <span>原图</span>
+            <input id="compareSlider" type="range" min="0" max="100" value="100" />
+            <span>处理后</span>
+          </div>
+        </header>
+
+        <div class="stage" id="stage">
+          <div class="empty-state" id="emptyState">
+            <strong>把图片拖到这里</strong>
+            <span>处理过程只在当前浏览器中完成</span>
+          </div>
+          <canvas id="originalCanvas"></canvas>
+          <canvas id="outputCanvas"></canvas>
+          <canvas id="maskCanvas"></canvas>
+          <div id="brushPreview"></div>
+        </div>
+      </section>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
